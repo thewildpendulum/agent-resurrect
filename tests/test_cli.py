@@ -814,7 +814,7 @@ class CliConfigTest(CliCase):
         code, out, _ = self.run_cli("config")
         self.assertEqual(code, OK)
         self.assertEqual(out.splitlines(), ["auto_resume = countdown", "countdown_seconds = 3",
-                                            "permission_flag = mirror", "max_age_days = 14",
+                                            "permission_flag = never", "max_age_days = 14",
                                             "pane_search = ask"])
         self.assertEqual(self.run_cli("config", "auto_resume", "immediate")[0], OK)
         code, out, _ = self.run_cli("config", "auto_resume")

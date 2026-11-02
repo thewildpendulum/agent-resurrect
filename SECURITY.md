@@ -18,8 +18,8 @@ agent-resurrect runs code in places where a bug could matter, so these are espec
 - The shell snippet that runs at the first prompt of every interactive shell.
 - The Claude Code plugin hooks, which run in every Claude Code session, and the plugin's `setup` skill.
 - Anything that lets text from a transcript, a session title, a path or an environment variable reach the terminal as an escape sequence, reach a `--json` document unescaped, or reach the filesystem outside agent-resurrect's own folders.
-- Anything that makes a session resume with permission checks turned off when it was not running that way and `permission_flag` is not `always`.
+- Anything that makes a session resume with permission checks turned off when it was not running that way, or at all when `permission_flag` is `never`.
 - Anything that starts an agent without a terminal, or lets one pane's shell resume or alter another pane's session automatically.
 - Anything that makes uninstall leave a setting changed while reporting success.
 
-Out of scope: vulnerabilities in Claude Code, iTerm2 or macOS themselves (please report those to their maintainers), and the documented effect of `permission_flag = always`.
+Out of scope: vulnerabilities in Claude Code, iTerm2 or macOS themselves (please report those to their maintainers), and the documented effect of `permission_flag = mirror`.

@@ -269,7 +269,7 @@ Settings live in `~/.config/agent-resurrect/config`. The file is optional; set v
 [agent-resurrect]
 auto_resume = countdown
 countdown_seconds = 3
-permission_flag = mirror
+permission_flag = never
 max_age_days = 14
 pane_search = ask
 ```
@@ -278,7 +278,7 @@ pane_search = ask
 |---|---|---|---|
 | `auto_resume` | `countdown`, `immediate`, `ask`, `off` | `countdown` | What a restored pane does. `countdown` waits and lets you skip; `immediate` resumes at once; `ask` asks `[Y/n]` first; `off` only prints the resume command. |
 | `countdown_seconds` | integer | `3` | Length of the countdown. |
-| `permission_flag` | `mirror`, `always`, `never` | `mirror` | When to add `--dangerously-skip-permissions`. See [Permission mode](#permission-mode). |
+| `permission_flag` | `never`, `mirror` | `never` | When to add `--dangerously-skip-permissions`. See [Permission mode](#permission-mode). |
 | `max_age_days` | integer | `14` | Records not updated for this many days are not restored automatically and are cleaned up. |
 | `pane_search` | `ask`, `auto`, `off` | `ask` | What `agent-resurrect` does in a pane with nothing recorded. `ask` asks before searching the pane's scrollback and before resuming the match; `auto` searches and resumes a strong match without asking, as `-y` does (a weak or ambiguous match is still asked about); `off` never reads the scrollback unless you pass `-y`. |
 
@@ -375,7 +375,7 @@ Claude Code looks up a session by its folder. If the folder was moved or renamed
 Sessions started with `CLAUDE_CONFIG_DIR` set are recorded with it and resumed with the same value, so Claude Code finds them in the right place.
 
 **It resumed without bypass permissions mode, or with it when I did not want it.**
-See [Permission mode](#permission-mode): `agent-resurrect config permission_flag mirror`, `always` or `never`.
+See [Permission mode](#permission-mode): `agent-resurrect config permission_flag mirror` or `never`.
 
 **macOS showed "Background Items Added" after I logged in.**
 That is the LaunchAgent that opens iTerm2 at login, `io.github.imgovind.agent-resurrect.iterm`. You can see it in System Settings, General, Login Items. `agent-resurrect uninstall` removes it.
@@ -505,9 +505,8 @@ A Claude Code session that was running with `--dangerously-skip-permissions` (by
 
 | Value | Behaviour |
 |---|---|
-| `mirror` (default) | Adds `--dangerously-skip-permissions` only if the session was last running in bypass permissions mode. Claude Code restores the other modes by itself. |
-| `always` | Always adds the flag. |
-| `never` | Never adds the flag. |
+| `never` (default) | Never adds the flag. A session that was in bypass permissions mode resumes in the default mode. |
+| `mirror` | Adds `--dangerously-skip-permissions` only if the session was last running in bypass permissions mode. Claude Code restores the other modes by itself. |
 
 To change it:
 

@@ -13,7 +13,7 @@
       "properties": {
         "auto_resume": {"enum": ["countdown", "immediate", "ask", "off"]},
         "countdown_seconds": {"type": "integer", "minimum": 0},
-        "permission_flag": {"enum": ["mirror", "always", "never"]},
+        "permission_flag": {"enum": ["never", "mirror"]},
         "max_age_days": {"type": "integer", "minimum": 0},
         "pane_search": {"enum": ["ask", "auto", "off"]}
       }
