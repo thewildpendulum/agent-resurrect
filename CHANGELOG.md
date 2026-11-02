@@ -4,6 +4,9 @@ All notable changes to agent-resurrect are recorded here. The format follows [Ke
 
 ## [Unreleased]
 
+### Security
+- A pane record is a file on disk, so `resume` and `auto` no longer trust it. A session id that is not a plain id (for example one that starts with `-`) is never resumed or looked up. `transcript_path` is used only when it is `<projects dir>/<folder>/<session id>.jsonl`, and otherwise the transcript is found by id. `resume_env` accepts back only `CLAUDE_CONFIG_DIR`, and only as an absolute path; entries such as `PATH` or `NODE_OPTIONS` are ignored and logged. New adapter hook: `AgentAdapter.safe_resume_env`.
+
 ## [0.3.0] - 2026-10-13
 
 ### Added

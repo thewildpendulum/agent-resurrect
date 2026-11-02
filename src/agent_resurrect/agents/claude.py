@@ -99,9 +99,10 @@ def _text(payload: dict, key: str) -> Optional[str]:
 
 
 def _config_dir(env: Optional[Mapping[str, str]]) -> Optional[str]:
-    """CLAUDE_CONFIG_DIR from an environment (a process's, or a record's resume_env read from disk)."""
+    """CLAUDE_CONFIG_DIR from an environment (a process's, or a record's resume_env read from disk). Only an
+    absolute path counts: Claude Code reads settings and hooks from this directory."""
     value = env.get(CONFIG_DIR_VAR) if isinstance(env, AnyMapping) else None
-    return value if isinstance(value, str) and value else None
+    return value if isinstance(value, str) and os.path.isabs(value) else None
 
 
 def _resume_env(env: Mapping[str, str]) -> Optional[Dict[str, str]]:
@@ -112,6 +113,17 @@ def _resume_env(env: Mapping[str, str]) -> Optional[Dict[str, str]]:
 def _projects_dir(config_dir: Optional[str] = None) -> Path:
     """<config dir>/projects: the given one (a record's), else the environment's (paths honours the variable)."""
     return (Path(config_dir) if config_dir else paths.claude_config_dir()) / "projects"
+
+
+def _is_session_transcript(path: Path, projects: Path, session_id: str) -> bool:
+    """True if path is <projects>/<project folder>/<session id>.jsonl, symlinks resolved, and a file."""
+    try:
+        resolved = path.resolve(strict=True)
+        root = projects.resolve(strict=True)
+    except (OSError, RuntimeError):
+        return False
+    return (resolved.is_file() and resolved.name == f"{session_id}.jsonl"
+            and resolved.parent.parent == root)
 
 
 def _executable() -> str:
@@ -253,12 +265,20 @@ class ClaudeAdapter(AgentAdapter):
 
     # Resuming
 
+    def safe_resume_env(self, env: Mapping[str, str]) -> Mapping[str, str]:
+        """Only CLAUDE_CONFIG_DIR, and only as an absolute path."""
+        value = _config_dir(env)
+        return {CONFIG_DIR_VAR: value} if value else {}
+
     def _transcript(self, record: Record) -> Optional[Path]:
+        if not finder.valid_session_id(record.session_id):
+            return None  # a record is a file on disk: never look up, or resume, an id that is not one
+        projects = _projects_dir(_config_dir(record.resume_env))
         if record.transcript_path:
             path = Path(record.transcript_path)
-            if path.is_file():
+            if _is_session_transcript(path, projects, record.session_id):
                 return path
-        return finder.find_transcript(record.session_id, _projects_dir(_config_dir(record.resume_env)))
+        return finder.find_transcript(record.session_id, projects)
 
     def session_exists(self, record: Record) -> bool:
         return self._transcript(record) is not None
@@ -269,6 +289,9 @@ class ClaudeAdapter(AgentAdapter):
         return (finder.last_permission_mode(path) if path else None) or record.permission_mode
 
     def resume_argv(self, record: Record, config: Config) -> List[str]:
+        """Raises ValueError for a session id that could be read as a flag or a path (see finder.SESSION_ID)."""
+        if not finder.valid_session_id(record.session_id):
+            raise ValueError(f"unusable session id {record.session_id!r}")
         argv = [_executable(), "--resume", record.session_id]
         flag = config.permission_flag
         # Claude Code restores every other mode itself; bypass must be asked for again.

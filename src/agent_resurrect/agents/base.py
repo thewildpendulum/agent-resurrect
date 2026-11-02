@@ -47,6 +47,11 @@ class AgentAdapter(ABC):
     def find_by_text(self, text: str, exclude: Optional[str] = None, limit: int = 5) -> List[Candidate]:
         """Sessions whose history contains the text, best match first."""
 
+    def safe_resume_env(self, env: Mapping[str, str]) -> Mapping[str, str]:
+        """The part of a record's resume_env this agent accepts back. Records are files on disk, so an adapter
+        narrows what a hand-edited one can set in the agent's environment. Default: all of it."""
+        return env
+
     def adopt(self, ctx: HookContext) -> Optional[Record]:
         """Record the agent session this process is running inside (a tool call of that session), for
         sessions started before agent-resurrect was installed. Returns the saved record, or None when not
