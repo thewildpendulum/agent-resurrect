@@ -371,6 +371,48 @@ class ClaudeSessionTest(unittest.TestCase):
             with self.subTest(resume_env=bad):
                 self.assertFalse(self.agent.session_exists(self.record(session_id="s7", resume_env=bad)))
 
+    def test_a_record_with_an_unusable_session_id_is_never_resumed(self):
+        # Records are files on disk. An id that reads as a flag or a path must not reach the command line, even
+        # when the record's transcript_path names a file that exists.
+        write_session(self.projects, "-Users-me-proj", "s1", [user("hello there")])
+        existing = str(self.projects / "-Users-me-proj" / "s1.jsonl")
+        for bad in ("--settings=/tmp/x.json", "-r", "../s1", "a b", "", "s1\n", None, 5):
+            with self.subTest(session_id=bad):
+                record = self.record(existing, session_id=bad)
+                self.assertFalse(self.agent.session_exists(record))
+                with self.assertRaises(ValueError):
+                    self.argv(record, "never")
+
+    def test_transcript_path_must_be_the_sessions_file_under_the_projects_dir(self):
+        write_session(self.projects, "-Users-me-proj", "s2", [user("the real one")])
+        elsewhere = self.projects.parent.parent / "elsewhere"
+        elsewhere.mkdir()
+        (elsewhere / "s1.jsonl").write_text("{}\n")
+        (elsewhere / "hosts").write_text("127.0.0.1 localhost\n")
+        misnamed = self.projects / "-Users-me-proj" / "other.jsonl"
+        misnamed.write_text("{}\n")
+        for path in (elsewhere / "s1.jsonl", elsewhere / "hosts", misnamed, "/etc/hosts"):
+            with self.subTest(transcript_path=str(path)):
+                self.assertFalse(self.agent.session_exists(self.record(path, session_id="s1")))
+        # The recorded path of the real transcript is still honoured, and a stale one is found by id.
+        real = self.projects / "-Users-me-proj" / "s2.jsonl"
+        self.assertTrue(self.agent.session_exists(self.record(real, session_id="s2")))
+        self.assertTrue(self.agent.session_exists(self.record(elsewhere / "s2.jsonl", session_id="s2")))
+
+    def test_only_an_absolute_config_dir_is_accepted_back_from_a_record(self):
+        env = {"CLAUDE_CONFIG_DIR": "/Users/me/.claude-work", "PATH": "/tmp/evil", "NODE_OPTIONS": "--require /tmp/x"}
+        self.assertEqual(self.agent.safe_resume_env(env), {"CLAUDE_CONFIG_DIR": "/Users/me/.claude-work"})
+        self.assertEqual(self.agent.safe_resume_env({"CLAUDE_CONFIG_DIR": "relative/dir"}), {})
+        self.assertEqual(self.agent.safe_resume_env({"PATH": "/tmp/evil"}), {})
+
+    def test_plan_resume_drops_resume_env_the_agent_does_not_accept(self):
+        from agent_resurrect import restore
+        record = self.record(session_id="s1", cwd="",
+                             resume_env={"CLAUDE_CONFIG_DIR": "/Users/me/.claude-work", "PATH": "/tmp/evil",
+                                         "NODE_OPTIONS": "--require /tmp/x"})
+        plan = restore.plan_resume(record, self.agent, Config())
+        self.assertEqual(plan.env, {"CLAUDE_CONFIG_DIR": "/Users/me/.claude-work"})
+
     def test_session_record_carries_the_config_dir(self):
         write_session(self.projects, "-Users-me-proj", "s1", [user("hello there")])
         self.assertEqual(self.agent.session_record("s1").resume_env,

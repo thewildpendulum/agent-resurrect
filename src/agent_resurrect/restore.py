@@ -101,7 +101,7 @@ def _decide(record: Record, agent: AgentAdapter, procs: Procs, config: Config, n
 
 def plan_resume(record: Record, agent: AgentAdapter, config: Config) -> ResumePlan:
     argv = list(agent.resume_argv(record, config))
-    env = _resume_env(record)
+    env = _resume_env(record, agent)
     if record.cwd and os.path.isdir(record.cwd):
         return ResumePlan(argv, record.cwd, None, env)
     warning = None
@@ -117,9 +117,10 @@ def _exportable(name: object, value: object) -> bool:
             and isinstance(value, str) and "\0" not in value)
 
 
-def _resume_env(record: Record) -> Dict[str, str]:
-    """A copy of the record's resume_env without entries that cannot be exported. Records are files on disk,
-    so a hand-edited one must neither put shell text into a printed command nor make exec raise."""
+def _resume_env(record: Record, agent: AgentAdapter) -> Dict[str, str]:
+    """A copy of the record's resume_env without entries that cannot be exported or that the agent does not
+    accept (agent.safe_resume_env). Records are files on disk, so a hand-edited one must neither put shell
+    text into a printed command, make exec raise, nor set variables such as PATH for the agent."""
     recorded = record.resume_env
     if not recorded:
         return {}
@@ -132,7 +133,10 @@ def _resume_env(record: Record) -> Dict[str, str]:
             env[name] = value
         else:
             logs.log(f"restore: ignoring resume_env entry {name!r} of {record.session_id!r}")
-    return env
+    accepted = dict(agent.safe_resume_env(env))
+    for name in env.keys() - accepted.keys():
+        logs.log(f"restore: ignoring resume_env entry {name!r} of {record.session_id!r}: not accepted by the agent")
+    return accepted
 
 
 def format_command(plan: ResumePlan) -> str:
