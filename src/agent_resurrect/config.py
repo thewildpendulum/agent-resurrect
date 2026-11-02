@@ -9,10 +9,10 @@ from . import logs, paths
 SECTION = "agent-resurrect"
 CHOICES = {
     "auto_resume": ("countdown", "immediate", "ask", "off"),
-    "permission_flag": ("mirror", "always", "never"),
+    "permission_flag": ("never", "mirror"),
     "pane_search": ("ask", "auto", "off"),
 }
-DEFAULTS = {"auto_resume": "countdown", "countdown_seconds": 3, "permission_flag": "mirror", "max_age_days": 14,
+DEFAULTS = {"auto_resume": "countdown", "countdown_seconds": 3, "permission_flag": "never", "max_age_days": 14,
             "pane_search": "ask"}
 
 
@@ -20,7 +20,7 @@ DEFAULTS = {"auto_resume": "countdown", "countdown_seconds": 3, "permission_flag
 class Config:
     auto_resume: str = "countdown"
     countdown_seconds: int = 3
-    permission_flag: str = "mirror"
+    permission_flag: str = "never"
     max_age_days: int = 14
     # `here` with nothing recorded for the pane: ask before searching its scrollback and before resuming the
     # match (ask), search and resume a strong match without asking, as -y does (auto), or never read the

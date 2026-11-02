@@ -308,12 +308,10 @@ class ClaudeSessionTest(unittest.TestCase):
         record = self.record(path, permission_mode="default")  # the transcript is newer than the hook payload
         self.assertEqual(self.argv(record, "mirror"), ["claude", "--resume", "s1", SKIP])
         self.assertEqual(self.argv(record, "never"), ["claude", "--resume", "s1"])
-        self.assertEqual(self.argv(record, "always"), ["claude", "--resume", "s1", SKIP])
         path = write_session(self.projects, "-Users-me-proj", "s2", [
             user("go", sid="s2", mode="bypassPermissions"), user("calm down", sid="s2", mode="default")])
         record = self.record(path, session_id="s2", permission_mode="bypassPermissions")
         self.assertEqual(self.argv(record, "mirror"), ["claude", "--resume", "s2"])
-        self.assertEqual(self.argv(record, "always"), ["claude", "--resume", "s2", SKIP])
 
     def test_resume_argv_falls_back_to_the_recorded_mode(self):
         gone = self.record(self.projects / "-Users-me-proj" / "s1.jsonl", permission_mode="bypassPermissions")

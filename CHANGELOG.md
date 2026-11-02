@@ -4,6 +4,9 @@ All notable changes to agent-resurrect are recorded here. The format follows [Ke
 
 ## [Unreleased]
 
+### Changed
+- `permission_flag` now defaults to `never`, and `always` is removed. A session that ran with `--dangerously-skip-permissions` resumes in the default mode unless you opt in with `agent-resurrect config permission_flag mirror`. A config file that still says `always` is logged and treated as `never`. Fork-only: upstream keeps `mirror` as its default.
+
 ### Security
 - A pane record is a file on disk, so `resume` and `auto` no longer trust it. A session id that is not a plain id (for example one that starts with `-`) is never resumed or looked up. `transcript_path` is used only when it is `<projects dir>/<folder>/<session id>.jsonl`, and otherwise the transcript is found by id. `resume_env` accepts back only `CLAUDE_CONFIG_DIR`, and only as an absolute path; entries such as `PATH` or `NODE_OPTIONS` are ignored and logged. New adapter hook: `AgentAdapter.safe_resume_env`.
 

@@ -294,8 +294,9 @@ class ClaudeAdapter(AgentAdapter):
             raise ValueError(f"unusable session id {record.session_id!r}")
         argv = [_executable(), "--resume", record.session_id]
         flag = config.permission_flag
-        # Claude Code restores every other mode itself; bypass must be asked for again.
-        if flag == "always" or (flag == "mirror" and self._current_mode(record) == BYPASS_MODE):
+        # Claude Code restores every other mode itself; bypass is asked for again only under `mirror`, and
+        # `never` (the default) is the only value that cannot be turned into bypass by a record or a transcript.
+        if flag == "mirror" and self._current_mode(record) == BYPASS_MODE:
             argv.append(SKIP_PERMISSIONS_FLAG)
         return argv
 

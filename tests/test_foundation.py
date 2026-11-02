@@ -248,12 +248,20 @@ class ConfigTest(unittest.TestCase):
                 "permission_flag = sometimes\nmax_age_days = -3\n")
             cfg = config.load_config()
             self.assertEqual((cfg.auto_resume, cfg.countdown_seconds), ("ask", 7))
-            self.assertEqual((cfg.permission_flag, cfg.max_age_days), ("mirror", 14))
+            self.assertEqual((cfg.permission_flag, cfg.max_age_days), ("never", 14))
+
+    def test_the_removed_always_value_falls_back_to_never(self):
+        with temp_home():
+            paths.config_dir().mkdir(parents=True)
+            paths.config_path().write_text("[agent-resurrect]\npermission_flag = always\n")
+            self.assertEqual(config.load_config().permission_flag, "never")
+            with self.assertRaises(ValueError):
+                config.set_value("permission_flag", "always")
 
     def test_set_value_validates_and_persists(self):
         with temp_home():
-            config.set_value("permission_flag", "always")
-            self.assertEqual(config.load_config().permission_flag, "always")
+            config.set_value("permission_flag", "mirror")
+            self.assertEqual(config.load_config().permission_flag, "mirror")
             with self.assertRaises(ValueError):
                 config.set_value("auto_resume", "sometimes")
             with self.assertRaises(KeyError):
